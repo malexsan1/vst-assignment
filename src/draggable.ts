@@ -16,6 +16,8 @@ type DragState = {
   startTop: number;
 };
 
+let previousDistance: number | null = null;
+
 let currentDragState: DragState = {
   activePointerId: null,
   isDragging: false,
@@ -110,3 +112,60 @@ resetButton.addEventListener("click", handleReset);
 window.addEventListener("pointermove", onMove);
 window.addEventListener("pointerup", onDragEnd);
 window.addEventListener("pointercancel", onDragEnd);
+
+type Point = {
+  x: number;
+  y: number;
+};
+
+const getDistance = (p1: Point, p2?: Point) => {
+  if (!p2) return 0;
+
+  const x = Math.pow(p1.x - p2.x, 2);
+  const y = Math.pow(p1.y - p2.y, 2);
+
+  return Math.sqrt(x + y);
+};
+//  Touch Events
+function onTouchStart(event: TouchEvent) {
+  const touches = event.touches;
+  const firstTouch = touches[0];
+  const secondTouch = touches[1];
+
+  previousDistance = getDistance(
+    { x: firstTouch.clientX, y: firstTouch.clientY },
+    secondTouch ? { x: secondTouch.clientX, y: secondTouch.clientY } : undefined
+  );
+}
+
+function onTouchMove(event: TouchEvent) {
+  const touches = event.targetTouches;
+
+  if (touches.length === 2) {
+    const firstTouch = touches[0];
+    const secondTouch = touches[1];
+
+    const currentHeight = dragElement.clientHeight;
+    const currentWidth = dragElement.clientWidth;
+
+    const distance = getDistance(
+      { x: firstTouch.clientX, y: firstTouch.clientY },
+      { x: secondTouch.clientX, y: secondTouch.clientY }
+    );
+
+    if (previousDistance !== null) {
+      if (distance > previousDistance) {
+        dragElement.style.width = `${currentWidth + 1}px`;
+        dragElement.style.height = `${currentHeight + 1}px`;
+      } else if (distance < previousDistance) {
+        dragElement.style.width = `${currentWidth - 1}px`;
+        dragElement.style.height = `${currentHeight - 1}px`;
+      }
+    }
+
+    previousDistance = distance;
+  }
+}
+
+window.addEventListener("touchstart", onTouchStart);
+window.addEventListener("touchmove", onTouchMove);
