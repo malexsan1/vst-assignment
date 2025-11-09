@@ -1,24 +1,14 @@
+import { INCREASE_STEP, MIN_SIZE } from "./constants";
+import { getBounds, moveElement, getDistance } from "./helpers";
+import { type DragState } from "./types";
+
 const container = document.getElementById("app")!;
 const dragElement = document.getElementById("drag-element")!;
 const resetButton = document.getElementById("reset-button")!;
 
-let leftPosition: string | number = "50%";
-let topPosition: string | number = "50%";
 let hasMoved = false;
-let quarterInitialWidth: number = dragElement.clientWidth / 4;
-let quarterInitialHeight: number = dragElement.clientHeight / 4;
-const MIN_SIZE = 4;
-const GUTTER_SIZE = 20;
-
-// drag state
-type DragState = {
-  isDragging: boolean;
-  activePointerId: number | null;
-  startPointerX: number;
-  startPointerY: number;
-  startLeft: number;
-  startTop: number;
-};
+const quarterInitialWidth: number = dragElement.clientWidth / 4;
+const quarterInitialHeight: number = dragElement.clientHeight / 4;
 
 let previousDistance: number | null = null;
 
@@ -35,11 +25,12 @@ function centerDragElement() {
   const containerRect = container.getBoundingClientRect();
   const dragElementRect = dragElement.getBoundingClientRect();
 
-  leftPosition = (containerRect.width - dragElementRect.width) / 2;
-  topPosition = (containerRect.height - dragElementRect.height) / 2;
-
-  dragElement.style.left = `${leftPosition}px`;
-  dragElement.style.top = `${topPosition}px`;
+  dragElement.style.left = `${
+    (containerRect.width - dragElementRect.width) / 2
+  }px`;
+  dragElement.style.top = `${
+    (containerRect.height - dragElementRect.height) / 2
+  }px`;
 }
 
 export function setupDragElement() {
@@ -59,6 +50,8 @@ function handleReset() {
 function handleWindowResize() {
   if (!hasMoved) {
     centerDragElement();
+  } else {
+    moveElement({ dragElement, container });
   }
 }
 
@@ -85,24 +78,18 @@ function onMove(event: PointerEvent) {
     return;
   }
 
-  const containerRect = container.getBoundingClientRect();
-  const maxLeft = containerRect.width - dragElement.clientWidth - GUTTER_SIZE;
-  const maxTop = containerRect.height - dragElement.clientHeight - GUTTER_SIZE;
-
-  const dx = event.clientX - currentDragState.startPointerX;
-  const dy = event.clientY - currentDragState.startPointerY;
-
-  const newLeft = Math.max(
-    Math.min(maxLeft, currentDragState.startLeft + dx),
-    GUTTER_SIZE
-  );
-  const newTop = Math.max(
-    Math.min(maxTop, currentDragState.startTop + dy),
-    GUTTER_SIZE
-  );
-
-  dragElement.style.left = `${newLeft}px`;
-  dragElement.style.top = `${newTop}px`;
+  moveElement({
+    dragElement,
+    container,
+    left:
+      currentDragState.startLeft +
+      event.clientX -
+      currentDragState.startPointerX,
+    top:
+      currentDragState.startTop +
+      event.clientY -
+      currentDragState.startPointerY,
+  });
   hasMoved = true;
 }
 
@@ -123,28 +110,6 @@ function onDragEnd() {
   dragElement.style.cursor = "grab";
 }
 
-document.defaultView!.addEventListener("resize", handleWindowResize);
-
-dragElement.addEventListener("pointerdown", onDragStart);
-resetButton.addEventListener("click", handleReset);
-
-window.addEventListener("pointermove", onMove);
-window.addEventListener("pointerup", onDragEnd);
-window.addEventListener("pointercancel", onDragEnd);
-
-type Point = {
-  x: number;
-  y: number;
-};
-
-const getDistance = (p1: Point, p2?: Point) => {
-  if (!p2) return 0;
-
-  const x = Math.pow(p1.x - p2.x, 2);
-  const y = Math.pow(p1.y - p2.y, 2);
-
-  return Math.sqrt(x + y);
-};
 //  Touch Events
 function onTouchStart(event: TouchEvent) {
   const touches = event.touches;
@@ -174,19 +139,22 @@ function onTouchMove(event: TouchEvent) {
 
     if (previousDistance !== null) {
       if (distance > previousDistance) {
-        const newWidth = currentWidth + 1;
-        const newHeight = currentHeight + 1;
+        const { maxHeight, maxWidth } = getBounds(container, dragElement);
+
+        const newWidth = Math.min(maxWidth, currentWidth + INCREASE_STEP);
+        const newHeight = Math.min(maxHeight, currentHeight + INCREASE_STEP);
+
         dragElement.style.width = `${newWidth}px`;
         dragElement.style.height = `${newHeight}px`;
         dragElement.innerHTML = `${newWidth}x${newHeight}`;
       } else if (distance < previousDistance) {
         const newWidth = Math.max(
-          currentWidth - 1,
+          currentWidth - INCREASE_STEP,
           MIN_SIZE,
           quarterInitialWidth
         );
         const newHeight = Math.max(
-          currentHeight - 1,
+          currentHeight - INCREASE_STEP,
           MIN_SIZE,
           quarterInitialHeight
         );
@@ -201,5 +169,14 @@ function onTouchMove(event: TouchEvent) {
   }
 }
 
+document.defaultView!.addEventListener("resize", handleWindowResize);
+
+resetButton.addEventListener("click", handleReset);
+
+dragElement.addEventListener("pointermove", onMove);
+dragElement.addEventListener("pointerup", onDragEnd);
+dragElement.addEventListener("pointercancel", onDragEnd);
+
+dragElement.addEventListener("pointerdown", onDragStart);
 dragElement.addEventListener("touchstart", onTouchStart);
 dragElement.addEventListener("touchmove", onTouchMove);
