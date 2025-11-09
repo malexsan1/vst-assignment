@@ -28,13 +28,16 @@ body {
 }
 
 #drag-element {
-  width: 100px;
-  height: 100px;
+  width: 200px;
+  height: 200px;
   background-color: #646cff;
   border-radius: 8px;
   position: absolute;
   touch-action: none;
   cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #reset-button {

@@ -5,6 +5,9 @@ const resetButton = document.getElementById("reset-button")!;
 let leftPosition: string | number = "50%";
 let topPosition: string | number = "50%";
 let hasMoved = false;
+let quarterInitialWidth: number = dragElement.clientWidth / 4;
+let quarterInitialHeight: number = dragElement.clientHeight / 4;
+const MIN_SIZE = 4;
 
 // drag state
 type DragState = {
@@ -40,6 +43,7 @@ function centerDragElement() {
 
 export function setupDragElement() {
   centerDragElement();
+  dragElement.innerHTML = `${dragElement.clientWidth}x${dragElement.clientHeight}`;
 }
 
 function handleReset() {
@@ -155,11 +159,26 @@ function onTouchMove(event: TouchEvent) {
 
     if (previousDistance !== null) {
       if (distance > previousDistance) {
-        dragElement.style.width = `${currentWidth + 1}px`;
-        dragElement.style.height = `${currentHeight + 1}px`;
+        const newWidth = currentWidth + 1;
+        const newHeight = currentHeight + 1;
+        dragElement.style.width = `${newWidth}px`;
+        dragElement.style.height = `${newHeight}px`;
+        dragElement.innerHTML = `${newWidth}x${newHeight}`;
       } else if (distance < previousDistance) {
-        dragElement.style.width = `${currentWidth - 1}px`;
-        dragElement.style.height = `${currentHeight - 1}px`;
+        const newWidth = Math.max(
+          currentWidth - 1,
+          MIN_SIZE,
+          quarterInitialWidth
+        );
+        const newHeight = Math.max(
+          currentHeight - 1,
+          MIN_SIZE,
+          quarterInitialHeight
+        );
+
+        dragElement.style.width = `${newWidth}px`;
+        dragElement.style.height = `${newHeight}px`;
+        dragElement.innerHTML = `${newWidth}x${newHeight}`;
       }
     }
 
