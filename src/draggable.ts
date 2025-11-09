@@ -8,6 +8,7 @@ let hasMoved = false;
 let quarterInitialWidth: number = dragElement.clientWidth / 4;
 let quarterInitialHeight: number = dragElement.clientHeight / 4;
 const MIN_SIZE = 4;
+const GUTTER_SIZE = 20;
 
 // drag state
 type DragState = {
@@ -80,14 +81,28 @@ function onMove(event: PointerEvent) {
   if (
     !currentDragState.isDragging ||
     event.pointerId !== currentDragState.activePointerId
-  )
+  ) {
     return;
+  }
+
+  const containerRect = container.getBoundingClientRect();
+  const maxLeft = containerRect.width - dragElement.clientWidth - GUTTER_SIZE;
+  const maxTop = containerRect.height - dragElement.clientHeight - GUTTER_SIZE;
 
   const dx = event.clientX - currentDragState.startPointerX;
   const dy = event.clientY - currentDragState.startPointerY;
 
-  dragElement.style.left = `${currentDragState.startLeft + dx}px`;
-  dragElement.style.top = `${currentDragState.startTop + dy}px`;
+  const newLeft = Math.max(
+    Math.min(maxLeft, currentDragState.startLeft + dx),
+    GUTTER_SIZE
+  );
+  const newTop = Math.max(
+    Math.min(maxTop, currentDragState.startTop + dy),
+    GUTTER_SIZE
+  );
+
+  dragElement.style.left = `${newLeft}px`;
+  dragElement.style.top = `${newTop}px`;
   hasMoved = true;
 }
 
@@ -186,5 +201,5 @@ function onTouchMove(event: TouchEvent) {
   }
 }
 
-window.addEventListener("touchstart", onTouchStart);
-window.addEventListener("touchmove", onTouchMove);
+dragElement.addEventListener("touchstart", onTouchStart);
+dragElement.addEventListener("touchmove", onTouchMove);
