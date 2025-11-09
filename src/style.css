@@ -41,6 +41,8 @@ body {
   background-color: #646cff;
   border-radius: 8px;
   position: absolute;
+  left: 50%;
+  top: 50%;
   touch-action: none;
   cursor: grab;
   display: flex;
